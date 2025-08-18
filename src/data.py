@@ -8,143 +8,9 @@ DATA_DIR = "data"
 USERS_FILE = os.path.join(DATA_DIR, "users.csv")
 POSTS_FILE = os.path.join(DATA_DIR, "posts.csv")
 USER_LIKES_FILE = os.path.join(DATA_DIR, "user_likes.json")
-TRAVEL_MATES_FILE = os.path.join(DATA_DIR, "travel_mates.csv")
 
 # 데이터 디렉토리 생성
 os.makedirs(DATA_DIR, exist_ok=True)
-
-# =============================================================================
-# 여행메이트 관련 함수들
-# =============================================================================
-
-def get_tms() -> pd.DataFrame:
-    """여행메이트 목록을 반환 (TMS = Travel Mate System)"""
-    if os.path.exists(TRAVEL_MATES_FILE):
-        return pd.read_csv(TRAVEL_MATES_FILE)
-    else:
-        # 기본 여행메이트 데이터 생성
-        travel_data = {
-            "tm_id": [1, 2, 3],
-            "user_id": [1, 2, 1],
-            "departure_city": ["서울", "부산", "인천"],
-            "destination_city": ["델리", "뭄바이", "델리"],
-            "travel_date": ["2024-09-01", "2024-09-15", "2024-10-01"],
-            "duration": ["7일", "10일", "5일"],
-            "description": [
-                "델리 관광지 함께 둘러봐요!",
-                "뭄바이에서 볼리우드 투어 하실 분",
-                "델리 맛집 탐방 같이 해요"
-            ],
-            "max_people": [3, 2, 4],
-            "current_people": [1, 1, 2],
-            "status": ["open", "open", "open"],
-            "created_at": [
-                "2024-08-10 09:00:00",
-                "2024-08-12 14:30:00",
-                "2024-08-14 16:45:00"
-            ]
-        }
-        df = pd.DataFrame(travel_data)
-        df.to_csv(TRAVEL_MATES_FILE, index=False)
-        return df
-
-def add_travel_mate(user_id: int, departure_city: str, destination_city: str, 
-                   travel_date: str, duration: str, description: str, max_people: int) -> bool:
-    """새 여행메이트 모집글 추가"""
-    try:
-        tms_df = get_tms()
-        
-        # 새 여행메이트 ID 생성
-        new_tm_id = tms_df["tm_id"].max() + 1 if len(tms_df) > 0 else 1
-        
-        # 새 여행메이트 모집글 추가
-        new_tm = pd.DataFrame({
-            "tm_id": [new_tm_id],
-            "user_id": [user_id],
-            "departure_city": [departure_city],
-            "destination_city": [destination_city],
-            "travel_date": [travel_date],
-            "duration": [duration],
-            "description": [description],
-            "max_people": [max_people],
-            "current_people": [1],  # 작성자 포함
-            "status": ["open"],
-            "created_at": [datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
-        })
-        
-        tms_df = pd.concat([tms_df, new_tm], ignore_index=True)
-        tms_df.to_csv(TRAVEL_MATES_FILE, index=False)
-        return True
-    except Exception as e:
-        print(f"여행메이트 추가 오류: {e}")
-        return False
-
-def close_travel_mate(tm_id: int) -> bool:
-    """여행메이트 모집 마감"""
-    try:
-        tms_df = get_tms()
-        
-        # 해당 tm_id가 존재하는지 확인
-        if tm_id not in tms_df["tm_id"].values:
-            return False
-        
-        # 상태를 'closed'로 변경
-        tms_df.loc[tms_df["tm_id"] == tm_id, "status"] = "closed"
-        tms_df.to_csv(TRAVEL_MATES_FILE, index=False)
-        return True
-    except Exception as e:
-        print(f"여행메이트 마감 오류: {e}")
-        return False
-
-def join_travel_mate(tm_id: int, user_id: int) -> bool:
-    """여행메이트에 참가"""
-    try:
-        tms_df = get_tms()
-        
-        # 해당 여행메이트 찾기
-        tm_mask = tms_df["tm_id"] == tm_id
-        tm_row = tms_df[tm_mask]
-        
-        if len(tm_row) == 0:
-            return False
-        
-        current_people = int(tm_row.iloc[0]["current_people"])
-        max_people = int(tm_row.iloc[0]["max_people"])
-        status = tm_row.iloc[0]["status"]
-        
-        # 참가 가능한지 확인
-        if status != "open" or current_people >= max_people:
-            return False
-        
-        # 참가자 수 증가
-        tms_df.loc[tm_mask, "current_people"] = current_people + 1
-        
-        # 정원이 다 찼으면 자동으로 마감
-        if current_people + 1 >= max_people:
-            tms_df.loc[tm_mask, "status"] = "full"
-        
-        tms_df.to_csv(TRAVEL_MATES_FILE, index=False)
-        return True
-    except Exception as e:
-        print(f"여행메이트 참가 오류: {e}")
-        return False
-
-def delete_travel_mate(tm_id: int) -> bool:
-    """여행메이트 모집글 삭제"""
-    try:
-        tms_df = get_tms()
-        
-        # 해당 tm_id가 존재하는지 확인
-        if tm_id not in tms_df["tm_id"].values:
-            return False
-        
-        # 해당 모집글 삭제
-        tms_df = tms_df[tms_df["tm_id"] != tm_id]
-        tms_df.to_csv(TRAVEL_MATES_FILE, index=False)
-        return True
-    except Exception as e:
-        print(f"여행메이트 삭제 오류: {e}")
-        return False
 
 # =============================================================================
 # 사용자 관련 함수들
@@ -437,7 +303,6 @@ def initialize_data():
     print("데이터 초기화 중...")
     get_users()  # 사용자 데이터 생성
     get_posts()  # 게시글 데이터 생성
-    get_tms()    # 여행메이트 데이터 생성
     print("데이터 초기화 완료!")
 
 def get_user_statistics() -> dict:

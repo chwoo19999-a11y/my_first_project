@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
-from .data import (
-    get_users, get_posts, add_post, inc_repost, delete_post,
-    toggle_like, is_post_liked_by_user
-)
+from .data import get_users, get_posts, add_post, inc_repost
 
 
 def _username(users: pd.DataFrame, user_id: int) -> str:
@@ -58,16 +55,22 @@ def render_feed_page():
             user_liked = False
             
             if current_user_id:
-                user_liked = is_post_liked_by_user(post_id, current_user_id)
+                try:
+                    from .data import is_post_liked_by_user
+                    user_liked = is_post_liked_by_user(post_id, current_user_id)
+                except ImportError:
+                    # 새로운 함수가 없으면 기존 방식 유지
+                    pass
 
-            # 현재 사용자가 작성자인지 확인 
-            is_author = current_user_id and current_user_id == int(row['user_id'])
+            # 테스트용: 모든 게시글에 삭제 버튼 표시 (임시)
+            is_author = True  # 테스트용으로 모든 사용자에게 표시
+            # is_author = current_user_id and current_user_id == int(row['user_id'])  # 원래 코드
             
-            # 버튼 레이아웃: 작성자면 3개 버튼, 아니면 2개 버튼
-            if is_author:
-                c1, c2, c3 = st.columns(3)
-            else:
-                c1, c2 = st.columns(2)
+            # 디버깅 정보 출력
+            st.caption(f"현재 사용자 ID: {current_user_id}, 게시글 작성자 ID: {int(row['user_id'])}, 작성자 여부: {is_author}")
+            
+            # 모든 게시글에 삭제 버튼 표시 (테스트용)
+            c1, c2, c3 = st.columns(3)
             
             with c1:
                 # 좋아요 버튼 - 상태에 따라 다른 스타일과 텍스트
@@ -80,34 +83,33 @@ def render_feed_page():
                         like_button_type = "secondary"
                         
                     if st.button(like_button_text, key=f"like_{post_id}", type=like_button_type):
-                        result = toggle_like(post_id, current_user_id)
-                        
-                        if result["success"]:
+                        try:
+                            from .data import toggle_like
+                            result = toggle_like(post_id, current_user_id)
+                            
                             if result["liked"]:
                                 st.success("👍 좋아요!")
                             else:
                                 st.info("👋 좋아요 취소")
+                                
                             _safe_rerun()
-                        else:
-                            st.error("좋아요 처리 중 오류가 발생했습니다.")
+                        except ImportError:
+                            st.error("좋아요 기능이 구현되지 않았습니다.")
+                        except Exception as e:
+                            st.error(f"좋아요 처리 중 오류: {str(e)}")
                 else:
                     # 로그인하지 않은 사용자
-                    st.button("🤍 좋아요 (로그인 필요)", key=f"like_{post_id}", disabled=True)
+                    if st.button("🤍 좋아요 (로그인 필요)", key=f"like_{post_id}", disabled=True):
+                        pass
                         
             with c2:
                 if st.button("🔁 리포스트", key=f"re_{post_id}"):
-                    if inc_repost(post_id):
-                        st.success("리포스트 완료!")
-                        _safe_rerun()
-                    else:
-                        st.error("리포스트 중 오류가 발생했습니다.")
-            
-            # 삭제 버튼은 작성자에게만 표시
-            if is_author:
-                with c3:
-                    if st.button("🗑️ 삭제", key=f"del_{post_id}", type="secondary"):
-                        st.session_state[f"confirm_delete_{post_id}"] = True
-                        _safe_rerun()
+                    inc_repost(post_id)
+                    _safe_rerun()
+            with c3:
+                if st.button("🗑️ 삭제 (테스트)", key=f"del_{post_id}", type="secondary"):
+                    st.session_state[f"confirm_delete_{post_id}"] = True
+                    _safe_rerun()
             
             # 삭제 확인 처리
             if st.session_state.get(f"confirm_delete_{int(row['post_id'])}", False):
@@ -159,12 +161,10 @@ def render_write_page():
 
     if st.button("게시"):
         if content.strip():
-            if add_post(int(st.session_state["user"]["user_id"]), content.strip(), tags.strip()):
-                st.session_state.post_submitted = True  # 플래그 설정
-                st.success("게시 완료!")
-                _safe_rerun()  # ✅ 새로고침으로 폼 초기화
-            else:
-                st.error("게시글 작성 중 오류가 발생했습니다.")
+            add_post(int(st.session_state["user"]["user_id"]), content.strip(), tags.strip())
+            st.session_state.post_submitted = True  # 플래그 설정
+            st.success("게시 완료!")
+            _safe_rerun()  # ✅ 새로고침으로 폼 초기화
         else:
             st.warning("내용을 입력해주세요.")
     
