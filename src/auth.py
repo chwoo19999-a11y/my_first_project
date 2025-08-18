@@ -44,4 +44,8 @@ def render_auth_sidebar():
         st.sidebar.caption(f"현재 로그인: **{st.session_state['user']['username']}**")
         if st.sidebar.button("로그아웃"):
             st.session_state["user"] = None
-            st.experimental_rerun()
+            # Streamlit 버전에 따른 호환성 처리
+            if hasattr(st, "rerun"):
+                st.rerun()
+            else:
+                st.experimental_rerun()

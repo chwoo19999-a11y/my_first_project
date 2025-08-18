@@ -7,6 +7,7 @@ from datetime import datetime
 DATA_DIR = "data"
 USERS_FILE = os.path.join(DATA_DIR, "users.csv")
 POSTS_FILE = os.path.join(DATA_DIR, "posts.csv")
+TMS_FILE = os.path.join(DATA_DIR, "travel_mates.csv")  # 추가
 USER_LIKES_FILE = os.path.join(DATA_DIR, "user_likes.json")
 
 # 데이터 디렉토리 생성
@@ -21,27 +22,31 @@ def get_users() -> pd.DataFrame:
     if os.path.exists(USERS_FILE):
         return pd.read_csv(USERS_FILE)
     else:
-        # 기본 사용자 데이터 생성
+        # 기본 사용자 데이터 생성 - 해시화된 비밀번호 사용
         users_data = {
             "user_id": [1, 2, 3],
             "username": ["alice", "bob", "charlie"],
             "email": ["alice@email.com", "bob@email.com", "charlie@email.com"],
-            "password": ["password123", "password123", "password123"]  # 실제로는 해시화해야 함
+            "password_sha256": [
+                "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",  # password123
+                "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",  # password123
+                "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f"   # password123
+            ]
         }
         df = pd.DataFrame(users_data)
         df.to_csv(USERS_FILE, index=False)
         return df
 
-def add_user(username: str, email: str, password: str) -> bool:
+def add_user(username: str, password_sha256: str, email: str) -> tuple:
     """새 사용자 추가"""
     try:
         users_df = get_users()
         
         # 중복 사용자명/이메일 체크
         if username in users_df["username"].values:
-            return False
+            return False, "이미 존재하는 사용자명입니다."
         if email in users_df["email"].values:
-            return False
+            return False, "이미 존재하는 이메일입니다."
         
         # 새 사용자 ID 생성
         new_user_id = users_df["user_id"].max() + 1 if len(users_df) > 0 else 1
@@ -51,22 +56,22 @@ def add_user(username: str, email: str, password: str) -> bool:
             "user_id": [new_user_id],
             "username": [username],
             "email": [email],
-            "password": [password]  # 실제로는 해시화해야 함
+            "password_sha256": [password_sha256]
         })
         
         users_df = pd.concat([users_df, new_user], ignore_index=True)
         users_df.to_csv(USERS_FILE, index=False)
-        return True
+        return True, "회원가입 성공"
     except Exception as e:
         print(f"사용자 추가 오류: {e}")
-        return False
+        return False, f"오류가 발생했습니다: {e}"
 
-def verify_user(username: str, password: str) -> dict:
+def verify_user(username: str, password_sha256: str) -> dict:
     """사용자 인증"""
     try:
         users_df = get_users()
         user_row = users_df[
-            (users_df["username"] == username) & (users_df["password"] == password)
+            (users_df["username"] == username) & (users_df["password_sha256"] == password_sha256)
         ]
         
         if len(user_row) > 0:
@@ -167,6 +172,80 @@ def inc_repost(post_id: int) -> bool:
         return True
     except Exception as e:
         print(f"리포스트 증가 오류: {e}")
+        return False
+
+# =============================================================================
+# 여행메이트 관련 함수들 (travel.py에서 필요)
+# =============================================================================
+
+def get_tms() -> pd.DataFrame:
+    """여행메이트 목록을 반환"""
+    if os.path.exists(TMS_FILE):
+        return pd.read_csv(TMS_FILE)
+    else:
+        # 기본 여행메이트 데이터 생성
+        tms_data = {
+            "mate_id": [1, 2],
+            "user_id": [1, 2],
+            "title": ["델리-아그라 당일치기 메이트 구해요", "라자스탄 일주 여행 동행자 모집"],
+            "departure_city": ["Delhi", "Jaipur"],
+            "destination_city": ["Agra", "Udaipur"],
+            "date_from": ["2024-08-20", "2024-09-01"],
+            "date_to": ["2024-08-20", "2024-09-07"],
+            "budget_range_krw": ["100000-150000", "300000-500000"],
+            "preferred_transport": ["Car", "Bus"],
+            "contact": ["alice@email.com", "bob@email.com"],
+            "notes": ["타지마할 관람, 맛집 탐방", "왕궁, 호수, 사막 투어"],
+            "status": ["open", "open"],
+            "created_at": ["2024-08-15 10:00:00", "2024-08-15 15:30:00"]
+        }
+        df = pd.DataFrame(tms_data)
+        df.to_csv(TMS_FILE, index=False)
+        return df
+
+def add_travel_mate(user_id: int, title: str, departure_city: str, destination_city: str,
+                   date_from, date_to, budget_range_krw: str, preferred_transport: str,
+                   contact: str, notes: str) -> bool:
+    """새 여행메이트 등록"""
+    try:
+        tms_df = get_tms()
+        
+        # 새 메이트 ID 생성
+        new_mate_id = tms_df["mate_id"].max() + 1 if len(tms_df) > 0 else 1
+        
+        # 새 여행메이트 추가
+        new_mate = pd.DataFrame({
+            "mate_id": [new_mate_id],
+            "user_id": [user_id],
+            "title": [title],
+            "departure_city": [departure_city],
+            "destination_city": [destination_city],
+            "date_from": [str(date_from)],
+            "date_to": [str(date_to)],
+            "budget_range_krw": [budget_range_krw],
+            "preferred_transport": [preferred_transport],
+            "contact": [contact],
+            "notes": [notes],
+            "status": ["open"],
+            "created_at": [datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
+        })
+        
+        tms_df = pd.concat([tms_df, new_mate], ignore_index=True)
+        tms_df.to_csv(TMS_FILE, index=False)
+        return True
+    except Exception as e:
+        print(f"여행메이트 추가 오류: {e}")
+        return False
+
+def close_travel_mate(mate_id: int) -> bool:
+    """여행메이트 마감"""
+    try:
+        tms_df = get_tms()
+        tms_df.loc[tms_df["mate_id"] == mate_id, "status"] = "closed"
+        tms_df.to_csv(TMS_FILE, index=False)
+        return True
+    except Exception as e:
+        print(f"여행메이트 마감 오류: {e}")
         return False
 
 # =============================================================================
@@ -303,6 +382,7 @@ def initialize_data():
     print("데이터 초기화 중...")
     get_users()  # 사용자 데이터 생성
     get_posts()  # 게시글 데이터 생성
+    get_tms()    # 여행메이트 데이터 생성
     print("데이터 초기화 완료!")
 
 def get_user_statistics() -> dict:
@@ -310,11 +390,13 @@ def get_user_statistics() -> dict:
     try:
         users_df = get_users()
         posts_df = get_posts()
+        tms_df = get_tms()
         user_likes = get_user_likes()
         
         return {
             "total_users": len(users_df),
             "total_posts": len(posts_df),
+            "total_travel_mates": len(tms_df),
             "total_likes": posts_df["likes"].sum(),
             "total_reposts": posts_df["reposts"].sum(),
             "active_likers": len(user_likes)
