@@ -1,0 +1,2 @@
+mate_id,user_id,title,departure_city,destination_city,date_from,date_to,budget_range_krw,preferred_transport,contact,notes,status,created_at
+1,1,델리 여행메이트 구해요,델리,델리,2025-08-18,2025-08-18,150000-250000,Train,chwoo,"바닷가 산책, 맛집 좋아요",closed,2025-08-18 10:10:43

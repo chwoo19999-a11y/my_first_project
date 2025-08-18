@@ -14,7 +14,7 @@ COMMENTS_CSV = os.path.join(DATA_DIR, "comments.csv")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 EMPTY = {
-    USERS_CSV: ["user_id","username","password_sha256","email","country","city_in_korea","joined_at"],
+    USERS_CSV: ["user_id","username","password","email","country","city_in_korea","joined_at"],
     POSTS_CSV: ["post_id","user_id","content","tags","created_at","likes","reposts"],
     TMS_CSV:   ["mate_id","user_id","title","departure_city","destination_city","date_from","date_to","budget_range_krw","preferred_transport","contact","notes","status","created_at"],
     COMMENTS_CSV: ["comment_id","post_id","user_id","content","created_at"],

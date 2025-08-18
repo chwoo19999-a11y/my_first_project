@@ -29,7 +29,7 @@ def render_travel_page():
             if st.session_state.get("user") and int(st.session_state["user"]["user_id"]) == int(r["user_id"]):
                 if st.button("마감하기", key=f"close_{int(r['mate_id'])}"):
                     close_travel_mate(int(r["mate_id"]))
-                    st.experimental_rerun()
+                    st.rerun()
 
     st.divider()
     st.subheader("여행메이트 등록")
@@ -39,16 +39,16 @@ def render_travel_page():
 
     c1, c2 = st.columns(2)
     with c1:
-        title = st.text_input("제목", value="부산 주말 여행 메이트 구해요")
-        dep_city = st.text_input("출발 도시", value="Seoul")
-        dst_city = st.text_input("목적지 도시", value="Busan")
+        title = st.text_input("제목", value="아그라 주말 여행 메이트 구해요")
+        dep_city = st.text_input("출발 도시", value="Delhi")
+        dst_city = st.text_input("목적지 도시", value="Agra")
         date_from = st.date_input("시작일")
     with c2:
         date_to = st.date_input("종료일")
         budget = st.text_input("예산 범위(원)", value="150000-250000")
-        transport = st.selectbox("교통수단", ["KTX", "Bus", "Flight", "Car"], index=0)
+        transport = st.selectbox("교통수단", ["Taxi", "Bus", "Flight", "Car"], index=0)
         contact = st.text_input("연락처", value=st.session_state["user"]["email"])
-    notes = st.text_area("추가 메모", value="바닷가 산책, 맛집 좋아요")
+    notes = st.text_area("추가 메모", value="유적지 탐방, 맛집 탐방, 쇼핑 좋아요")
 
     if st.button("등록"):
         add_travel_mate(
@@ -56,4 +56,4 @@ def render_travel_page():
             date_from, date_to, budget, transport, contact, notes
         )
         st.success("여행메이트 등록 완료!")
-        st.experimental_rerun()
+        st.experimental_user()
