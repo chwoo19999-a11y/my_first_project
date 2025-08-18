@@ -107,7 +107,7 @@ def render_feed_page():
                     inc_repost(post_id)
                     _safe_rerun()
             with c3:
-                if st.button("🗑️ 삭제 (테스트)", key=f"del_{post_id}", type="secondary"):
+                if st.button("🗑️ 삭제", key=f"del_{post_id}", type="secondary"):
                     st.session_state[f"confirm_delete_{post_id}"] = True
                     _safe_rerun()
             
