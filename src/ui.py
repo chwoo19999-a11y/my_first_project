@@ -6,6 +6,6 @@ def setup_page():
         page_icon="assets/india_flag_square_256.png",
         layout="wide",
     )
-    st.title("🇮🇳 재한 인도인 커뮤니티")
+    st.title("재한 인도인 커뮤니티 नमस्ते")
     with st.sidebar:
         st.image("assets/india_flag_256x170.png", use_container_width=True)
