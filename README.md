@@ -4,4 +4,4 @@
 3. **실행 방법**: 로컬에서 실행하는 방법
 4. **사용 방법**: 글쓰기 텝에서는 자유로운 주제로 글쓰기가 가능하며, 교류하고 싶은 사람들을 모집해도 된다. 여행 메이트 텝은 출발 도시가 동일 도시가 아니더라도 도착 도시가 같다면, 같이 여행할 수 있는 메이트를 구할 수 있다.
 5. **기술 스택**: streamlit, pandas, python
-6. **배포 주소**: Streamlit Cloud 링크
+6. **배포 주소**: https://myfirstproject-rtg59gejtjiiy9m9mac6tc.streamlit.app/
